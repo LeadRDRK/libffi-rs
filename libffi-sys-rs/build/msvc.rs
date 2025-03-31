@@ -27,7 +27,6 @@ fn unsupported(arch: &str) -> ! {
 }
 
 pub fn build_and_link() {
-    let target = env::var("TARGET").unwrap();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
 
     // we should collect all include dirs together with platform specific ones
@@ -45,7 +44,7 @@ pub fn build_and_link() {
         all_includes.push(*each_include);
     }
 
-    let asm_path = pre_process_asm(all_includes.as_slice(), &target, &target_arch);
+    let asm_path = pre_process_asm(all_includes.as_slice(), &target_arch);
     let mut build = cc::Build::new();
 
     for each_include in all_includes {
@@ -81,7 +80,7 @@ pub fn probe_and_link() {
     build_and_link();
 }
 
-pub fn pre_process_asm(include_dirs: &[&str], target: &str, target_arch: &str) -> String {
+pub fn pre_process_asm(include_dirs: &[&str], target_arch: &str) -> PathBuf {
     let folder_name = match target_arch {
         "x86" => "x86",
         "x86_64" => "x86",
@@ -96,11 +95,11 @@ pub fn pre_process_asm(include_dirs: &[&str], target: &str, target_arch: &str) -
         _ => unsupported(target_arch),
     };
 
-    let mut cmd = cc::windows_registry::find(target, "cl.exe").expect("Could not locate cl.exe");
+    let build = cc::Build::new();
+    let mut cmd = build.get_compiler().to_command();
     cmd.env("INCLUDE", include_dirs.join(";"));
 
     // When cross-compiling we should provide MSVC includes as part of the INCLUDE env.var
-    let build = cc::Build::new();
     for (key, value) in build.get_compiler().env() {
         if key.to_string_lossy() == "INCLUDE" {
             cmd.env(
@@ -113,7 +112,11 @@ pub fn pre_process_asm(include_dirs: &[&str], target: &str, target_arch: &str) -
     cmd.arg("/EP");
     cmd.arg(format!("libffi/src/{}/{}.S", folder_name, file_name));
 
-    let out_path = format!("libffi/src/{}/{}.asm", folder_name, file_name);
+    // TODO: it is absolutely not supposed to save the file in the pwd of the build script
+    let out_path = PathBuf::from(
+        format!("{}/libffi/src/{}/{}.asm", std::env::var("OUT_DIR").unwrap(), folder_name, file_name)
+    );
+    std::fs::create_dir_all(out_path.parent().unwrap()).unwrap();
     let asm_file = fs::File::create(&out_path).expect("Could not create output file");
 
     cmd.stdout(asm_file);

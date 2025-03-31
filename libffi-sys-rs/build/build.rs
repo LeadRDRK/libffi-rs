@@ -1,18 +1,19 @@
 mod common;
-#[cfg(target_env = "msvc")]
 mod msvc;
-#[cfg(not(target_env = "msvc"))]
 mod not_msvc;
 
-#[cfg(target_env = "msvc")]
-use msvc::*;
-#[cfg(not(target_env = "msvc"))]
-use not_msvc::*;
-
 fn main() {
+    let target_env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap();
+
     if cfg!(feature = "system") {
-        probe_and_link();
+        match target_env.as_str() {
+            "msvc" => msvc::probe_and_link(),
+            _ => not_msvc::probe_and_link()
+        }
     } else {
-        build_and_link();
+        match target_env.as_str() {
+            "msvc" => msvc::build_and_link(),
+            _ => not_msvc::build_and_link()
+        }
     }
 }
