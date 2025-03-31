@@ -14,6 +14,7 @@ edition = "2018"
 [features]
 system = []
 complex = []
+gnuspe = []
 
 [package.metadata.docs.rs]
 features = ["system"]

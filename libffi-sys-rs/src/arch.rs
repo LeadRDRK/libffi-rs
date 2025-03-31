@@ -171,10 +171,10 @@ mod powerpc {
             pub const SOFT_FLOAT_FLAG: crate::ffi_abi = super::ffi_abi_FFI_SYSV_SOFT_FLOAT;
         }
 
-        #[cfg(target_env = "gnuspe")]
+        #[cfg(feature = "gnuspe")]
         use no_fprs::*;
 
-        #[cfg(not(target_feature = "gnuspe"))]
+        #[cfg(not(feature = "gnuspe"))]
         use fprs::*;
 
         mod struct_ret {
@@ -320,10 +320,7 @@ mod riscv {
     pub const FFI_NATIVE_RAW_API: u32 = 0;
 }
 
-#[cfg(target_arch = "riscv")]
-pub use riscv::*;
-
-#[cfg(target_arch = "riscv64")]
+#[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 pub use riscv::*;
 
 /// From libffi:src/s390/ffitarget.h

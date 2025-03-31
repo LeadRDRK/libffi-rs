@@ -17,6 +17,7 @@ libc = "0.2.65"
 [features]
 complex = []
 system = ["libffi-sys/system"]
+gnuspe = ["libffi-sys/gnuspe"]
 
 [package.metadata.docs.rs]
 features = ["system"]
